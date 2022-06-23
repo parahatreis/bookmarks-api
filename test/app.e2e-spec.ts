@@ -1,3 +1,4 @@
+import { EditUserDto } from './../src/user/dto/edit-user.dto';
 import { AuthDTO } from './../src/auth/dto/auth.dto';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AppModule } from './../src/app.module';
@@ -69,6 +70,7 @@ describe('App e2e', () => {
       });
     });
     describe('Signin', () => {
+      let accessToken: string;
       it('Should throw if email empty', () => {
         return pactum
           .spec()
@@ -95,21 +97,50 @@ describe('App e2e', () => {
           .spec()
           .post('/auth/signin')
           .withBody(dto)
-          .expectStatus(200);
+          .expectStatus(200)
+          .stores('userAt', 'access_token');
       });
     });
   });
 
   describe('User', () => {
-    describe('Get me', () => {});
-    describe('Edit user', () => {});
+    describe('Get me', () => {
+      it('Should get user', () => {
+        return pactum
+          .spec()
+          .get('/users/me')
+          .withHeaders({
+            Authorization: `Bearer $S{userAt}`,
+          })
+          .expectStatus(200)
+          .inspect();
+      });
+    });
+    describe('Edit user', () => {
+      it('Should edit user', () => {
+        const dto: EditUserDto = {
+          firstName: 'Vlad',
+          email: 'vlad@gmail.com',
+        };
+        return pactum
+          .spec()
+          .patch('/users')
+          .withHeaders({
+            Authorization: `Bearer $S{userAt}`,
+          })
+          .withBody(dto)
+          .expectStatus(200)
+          .expectBodyContains(dto.firstName)
+          .expectBodyContains(dto.email);
+      });
+    });
   });
 
   describe('Bookmarks', () => {
     describe('Create bookmark', () => {});
     describe('Get bookmarks', () => {});
     describe('Get bookmark by id', () => {});
-    describe('Edit bookmark', () => {});
-    describe('Delete bookmark', () => {});
+    describe('Edit bookmark by id', () => {});
+    describe('Delete bookmark by id', () => {});
   });
 });
